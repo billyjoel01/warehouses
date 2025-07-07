@@ -47,7 +47,6 @@ public class InventariosController {
           .header("X-Error-meesage", "Producto no encontrado")
           .build();
       }
-      
     } else {
       return ResponseEntity.status(HttpStatus.NOT_FOUND)
           .header("X-Error-meesage", "Producto no encontrado")
@@ -94,8 +93,6 @@ public class InventariosController {
   public ResponseEntity<Inventario> update(@RequestBody Inventario request) {
     Optional<Inventario> InventarioOptional = repository.findById(request.getId());
     if (InventarioOptional.isPresent()) {
-      // Inventario Inventario = InventarioOptional.get();
-      // Inventario.setInventario(request.getInventario());
       repository.save(request);
       return ResponseEntity.ok(request);
     } else {
