@@ -42,13 +42,20 @@ public class TrasladosController {
   public static final Long ESTADO_PREPARACION = 1l;
   public static final Long ESTADO_RECEPCIONADO = 4l;
 
-  @Autowired private BodegaRepository bodegaRepository;
-  @Autowired private ProductoRepository productRepository;
-  @Autowired private DetalleTrasladoRepository detalleTrasladoRepository;
-  @Autowired private EstadoRepository estadoRepository;
-  @Autowired private HistoricoTrasladoRepository historicoTrasladoRepository;
-  @Autowired private InventarioRepository inventarioRepository;
-  @Autowired private TrasladoRepository repository;
+  @Autowired
+  private BodegaRepository bodegaRepository;
+  @Autowired
+  private ProductoRepository productRepository;
+  @Autowired
+  private DetalleTrasladoRepository detalleTrasladoRepository;
+  @Autowired
+  private EstadoRepository estadoRepository;
+  @Autowired
+  private HistoricoTrasladoRepository historicoTrasladoRepository;
+  @Autowired
+  private InventarioRepository inventarioRepository;
+  @Autowired
+  private TrasladoRepository repository;
 
   // Crear un nuevo Traslado
   @PostMapping
@@ -59,6 +66,7 @@ public class TrasladosController {
     traslado.setOrigen(origen);
     traslado.setDestino(destino);
     traslado.setCreatedAt(LocalDateTime.now());
+    traslado.setEstado(getEstadoEnPreparacion());
     // Puedes agregar más campos según tu modelo
     Traslado trasladoGuardado = repository.save(traslado);
     trasladoGuardado.setTrackingNumber(
@@ -88,7 +96,7 @@ public class TrasladosController {
     historicoTrasladoRepository.save(historico);
 
     return ResponseEntity.created(
-            java.net.URI.create("/warehouse/v1/traslados/" + trasladoGuardado.getId()))
+        java.net.URI.create("/warehouse/v1/traslados/" + trasladoGuardado.getId()))
         .body(trasladoGuardado);
   }
 
@@ -111,7 +119,8 @@ public class TrasladosController {
       StringBuilder hexString = new StringBuilder();
       for (byte b : hash) {
         String hex = Integer.toHexString(0xff & b);
-        if (hex.length() == 1) hexString.append('0');
+        if (hex.length() == 1)
+          hexString.append('0');
         hexString.append(hex);
       }
       // Puedes devolver todo el hash o solo una parte para hacerlo más corto
@@ -130,8 +139,7 @@ public class TrasladosController {
     } else {
       List<TrasladoDTO> trasladosDTO = new ArrayList<>(traslados.size());
       for (Traslado traslado : traslados) {
-        List<HistoricoTraslado> historial =
-            historicoTrasladoRepository.findByTrasladoId(traslado.getId());
+        List<HistoricoTraslado> historial = historicoTrasladoRepository.findByTrasladoId(traslado.getId());
         List<HistorialTrasladoDTO> historialDTO = new ArrayList<>(historial.size());
         for (HistoricoTraslado h : historial) {
           historialDTO.add(
@@ -142,16 +150,15 @@ public class TrasladosController {
                   new EstadoDTO(h.getEstado().getId(), h.getEstado().getEstado())));
         }
 
-        TrasladoDTO dto =
-            new TrasladoDTO(
-                traslado.getId(),
-                traslado.getCreatedAt(),
-                traslado.getUpdatedAt(),
-                new EstadoDTO(traslado.getEstado().getId(), traslado.getEstado().getEstado()),
-                new BodegaDTO(traslado.getOrigen().getId(), traslado.getOrigen().getNombre()),
-                new BodegaDTO(traslado.getDestino().getId(), traslado.getDestino().getNombre()),
-                traslado.getTrackingNumber(),
-                historialDTO);
+        TrasladoDTO dto = new TrasladoDTO(
+            traslado.getId(),
+            traslado.getCreatedAt(),
+            traslado.getUpdatedAt(),
+            new EstadoDTO(traslado.getEstado().getId(), traslado.getEstado().getEstado()),
+            new BodegaDTO(traslado.getOrigen().getId(), traslado.getOrigen().getNombre()),
+            new BodegaDTO(traslado.getDestino().getId(), traslado.getDestino().getNombre()),
+            traslado.getTrackingNumber(),
+            historialDTO);
         setDetalles(dto);
         trasladosDTO.add(dto);
       }
@@ -169,8 +176,7 @@ public class TrasladosController {
     if (trasladoOptional.isPresent()) {
       Traslado traslado = trasladoOptional.get();
 
-      List<HistoricoTraslado> historial =
-          historicoTrasladoRepository.findByTrasladoId(traslado.getId());
+      List<HistoricoTraslado> historial = historicoTrasladoRepository.findByTrasladoId(traslado.getId());
       List<HistorialTrasladoDTO> historialDTO = new ArrayList<>(historial.size());
       for (HistoricoTraslado h : historial) {
         historialDTO.add(
@@ -181,16 +187,48 @@ public class TrasladosController {
                 new EstadoDTO(h.getEstado().getId(), h.getEstado().getEstado())));
       }
 
-      TrasladoDTO dto =
-          new TrasladoDTO(
-              traslado.getId(),
-              traslado.getCreatedAt(),
-              traslado.getUpdatedAt(),
-              new EstadoDTO(traslado.getEstado().getId(), traslado.getEstado().getEstado()),
-              new BodegaDTO(traslado.getOrigen().getId(), traslado.getOrigen().getNombre()),
-              new BodegaDTO(traslado.getDestino().getId(), traslado.getDestino().getNombre()),
-              traslado.getTrackingNumber(),
-              historialDTO);
+      TrasladoDTO dto = new TrasladoDTO(
+          traslado.getId(),
+          traslado.getCreatedAt(),
+          traslado.getUpdatedAt(),
+          new EstadoDTO(traslado.getEstado().getId(), traslado.getEstado().getEstado()),
+          new BodegaDTO(traslado.getOrigen().getId(), traslado.getOrigen().getNombre()),
+          new BodegaDTO(traslado.getDestino().getId(), traslado.getDestino().getNombre()),
+          traslado.getTrackingNumber(),
+          historialDTO);
+      setDetalles(dto);
+      return ResponseEntity.ok(dto);
+    } else {
+      return ResponseEntity.notFound().build();
+    }
+  }
+  
+  @GetMapping("/tracking/{trackingNumber}")
+  public ResponseEntity<TrasladoDTO> getById(@PathVariable String trackingNumber) {
+    Optional<Traslado> trasladoOptional = repository.findByTrackingNumber(trackingNumber);
+    if (trasladoOptional.isPresent()) {
+      Traslado traslado = trasladoOptional.get();
+
+      List<HistoricoTraslado> historial = historicoTrasladoRepository.findByTrasladoId(traslado.getId());
+      List<HistorialTrasladoDTO> historialDTO = new ArrayList<>(historial.size());
+      for (HistoricoTraslado h : historial) {
+        historialDTO.add(
+            new HistorialTrasladoDTO(
+                h.getId(),
+                h.getCreatedAt(),
+                h.getTraslado().getId(),
+                new EstadoDTO(h.getEstado().getId(), h.getEstado().getEstado())));
+      }
+
+      TrasladoDTO dto = new TrasladoDTO(
+          traslado.getId(),
+          traslado.getCreatedAt(),
+          traslado.getUpdatedAt(),
+          new EstadoDTO(traslado.getEstado().getId(), traslado.getEstado().getEstado()),
+          new BodegaDTO(traslado.getOrigen().getId(), traslado.getOrigen().getNombre()),
+          new BodegaDTO(traslado.getDestino().getId(), traslado.getDestino().getNombre()),
+          traslado.getTrackingNumber(),
+          historialDTO);
       setDetalles(dto);
       return ResponseEntity.ok(dto);
     } else {
@@ -218,29 +256,33 @@ public class TrasladosController {
         historicoTrasladoRepository.save(historico);
 
         if (Objects.equals(estado.getId(), ESTADO_RECEPCIONADO)) {
-          List<DetalleTraslado> detalles =
-              detalleTrasladoRepository.findByTrasladoId(traslado.getId());
+          List<DetalleTraslado> detalles = detalleTrasladoRepository.findByTrasladoId(traslado.getId());
           for (DetalleTraslado detalle : detalles) {
-            Optional<Inventario> inventarioOrigenOpcional =
-                inventarioRepository.findByBodegaIdAndProductoId(
-                    detalle.getTraslado().getOrigen().getId(), detalle.getProducto().getId());
-            if(inventarioOrigenOpcional.isPresent()){
+            Optional<Inventario> inventarioOrigenOpcional = inventarioRepository.findByBodegaIdAndProductoId(
+                detalle.getTraslado().getOrigen().getId(), detalle.getProducto().getId());
+            if (inventarioOrigenOpcional.isPresent()) {
               Inventario inventario = inventarioOrigenOpcional.get();
               inventario.setCantidad(inventario.getCantidad() - detalle.getCantidad());
               inventarioRepository.save(inventario);
             }
-            Optional<Inventario> inventarioDestinoOpcional =
-                inventarioRepository.findByBodegaIdAndProductoId(
-                    detalle.getTraslado().getDestino().getId(), detalle.getProducto().getId());
-            if(inventarioDestinoOpcional.isPresent()){
+            Optional<Inventario> inventarioDestinoOpcional = inventarioRepository.findByBodegaIdAndProductoId(
+                detalle.getTraslado().getDestino().getId(), detalle.getProducto().getId());
+            if (inventarioDestinoOpcional.isPresent()) {
               Inventario inventario = inventarioDestinoOpcional.get();
               inventario.setCantidad(inventario.getCantidad() + detalle.getCantidad());
+              inventarioRepository.save(inventario);
+            } else {
+              Inventario inventario = new Inventario();
+              inventario.setCreatedAt(LocalDateTime.now());
+              inventario.setProducto(detalle.getProducto());
+              inventario.setBodega(detalle.getTraslado().getDestino());
+              inventario.setCantidad(detalle.getCantidad());
               inventarioRepository.save(inventario);
             }
           }
 
-          //         inventarioRepository.save(estado);
-          //         inventarioRepository.save(estado);
+          // inventarioRepository.save(estado);
+          // inventarioRepository.save(estado);
         }
 
         return ResponseEntity.ok(updated);
@@ -274,5 +316,14 @@ public class TrasladosController {
       detallesDTO.add(new DetalleDTO(detalle.getProducto(), detalle.getCantidad()));
     }
     traslado.setDetalles(detallesDTO);
+  }
+
+  /**
+   * Devuelve un objeto Estado que representa el estado de preparación.
+   * @return
+   */
+  private Estado getEstadoEnPreparacion() {
+    return estadoRepository.findById(ESTADO_PREPARACION)
+        .orElseThrow(() -> new RuntimeException("Estado de preparación no encontrado"));
   }
 }
