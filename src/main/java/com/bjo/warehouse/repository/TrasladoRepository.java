@@ -7,4 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface TrasladoRepository extends JpaRepository<Traslado, Long> {
 
   Optional<Traslado> findByTrackingNumber(String trackingNumber);
+
+  long countByEstadoId(Long estadoId);
+
 }
