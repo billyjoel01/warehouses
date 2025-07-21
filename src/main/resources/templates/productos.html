@@ -255,6 +255,7 @@
     <script src="/assets/js/sweetalert.min.js"></script>
     <script>
         document.getElementById('addProductForm').reset();
+        document.getElementById('addProductId').value = "0";
         var win = navigator.platform.indexOf('Win') > -1;
         if (win && document.querySelector('#sidenav-scrollbar')) {
             var options = {
@@ -275,12 +276,13 @@
             event.preventDefault(); // Prevenir el envío del formulario
             // swal("Good job!", "You clicked the button!", "success");
             const id = document.getElementById('addProductId').value;
+            console.log("id: " + id);
             const createdAt = document.getElementById('addProductCreatedAt').value;
             const nombre = document.getElementById('addProductName').value;
             const marca = document.getElementById('addProductMarca').value;
             const descripcion = document.getElementById('addProductDescripcion').value;
             const precio = document.getElementById('addProductPrecio').value;
-            if (id === 0) {
+            if (id === '0') {
                 const productoData = {
                     nombre: nombre,
                     marca: marca,
