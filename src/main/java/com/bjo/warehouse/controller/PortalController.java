@@ -1,8 +1,10 @@
 package com.bjo.warehouse.controller;
 
 import com.bjo.warehouse.model.Inventario;
+import com.bjo.warehouse.model.Producto;
 import com.bjo.warehouse.repository.InventarioRepository;
 import com.bjo.warehouse.repository.NativeRepository;
+import com.bjo.warehouse.repository.ProductoRepository;
 import com.bjo.warehouse.repository.TrasladoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -17,6 +19,9 @@ public class PortalController {
 
     @Autowired
     private InventarioRepository inventarioRepository;
+
+    @Autowired
+    private ProductoRepository productoRepository;
 
     @Autowired
     private TrasladoRepository trasladoRepository;
@@ -42,6 +47,13 @@ public class PortalController {
         model.addAttribute("trasladosTransito", trasladoRepository.countByEstadoId(ESTADO_TRANSITO));
         model.addAttribute("trasladosRecepcionado", trasladoRepository.countByEstadoId(ESTADO_RECEPCIONADO));
         return "portal";
+    }
+
+    @GetMapping("/productos")
+    public String productos(Model model) {
+        List<Producto> productos = productoRepository.findAll();
+        model.addAttribute("productos", productos);
+        return "productos";
     }
 
     @GetMapping("/inventarios")
