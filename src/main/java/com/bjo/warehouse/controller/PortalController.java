@@ -2,13 +2,20 @@ package com.bjo.warehouse.controller;
 
 import com.bjo.warehouse.dto.ServiceResponsePortalBodegasDTO;
 import com.bjo.warehouse.dto.ServiceResponsePortalBodegaDTO;
+import com.bjo.warehouse.dto.common.BodegaDTO;
 import com.bjo.warehouse.dto.common.PortalBodegaDTO;
+import com.bjo.warehouse.dto.common.PortalTrasladoDTO;
+import com.bjo.warehouse.model.Bodega;
 import com.bjo.warehouse.model.Inventario;
 import com.bjo.warehouse.model.Producto;
+import com.bjo.warehouse.model.Traslado;
+import com.bjo.warehouse.repository.BodegaRepository;
 import com.bjo.warehouse.repository.InventarioRepository;
 import com.bjo.warehouse.repository.NativeRepository;
 import com.bjo.warehouse.repository.ProductoRepository;
 import com.bjo.warehouse.repository.TrasladoRepository;
+import java.util.ArrayList;
+import java.util.Comparator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -27,6 +34,8 @@ public class PortalController {
   @Autowired private ProductoRepository productoRepository;
 
   @Autowired private TrasladoRepository trasladoRepository;
+
+  @Autowired private BodegaRepository bodegaRepository;
 
   @Autowired private NativeRepository nativeRepository;
 
@@ -85,5 +94,23 @@ public class PortalController {
     List<Inventario> inventarios = inventarioRepository.findAll();
     model.addAttribute("inventarios", inventarios);
     return "inventarios";
+  }
+
+  @GetMapping("/traslados")
+  public String traslados(Model model) {
+    List<PortalTrasladoDTO> traslados = nativeRepository.getPortalTraslados();
+    model.addAttribute("traslados", traslados);
+
+    List<Bodega> bodegas = bodegaRepository.findAll();
+    model.addAttribute("bodegas", mapToBodegaDTO(bodegas));
+    return "traslados";
+  }
+
+  private List<BodegaDTO> mapToBodegaDTO(List<Bodega> bodegas) {
+    List<BodegaDTO> lista = new ArrayList<>(bodegas.size());
+    for (Bodega bodega : bodegas) {
+      lista.add(new BodegaDTO(bodega.getId(), bodega.getNombre()));
+    }
+    return lista;
   }
 }

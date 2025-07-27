@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.stereotype.Repository;
 import com.bjo.warehouse.dto.common.PortalDetallesTraslados;
 import com.bjo.warehouse.dto.common.PortalInventarios;
+import com.bjo.warehouse.dto.common.PortalTrasladoDTO;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.util.ArrayList;
@@ -68,6 +69,7 @@ public class NativeRepository {
   public List<PortalBodegaDTO> getPortalBodegas() {
     return getPortalBodegas(null);
   }
+
   public List<PortalBodegaDTO> getPortalBodegas(Long bodegaId) {
     List<PortalBodegaDTO> bodegas;
     String sql =
@@ -121,5 +123,36 @@ public class NativeRepository {
         Double.valueOf(r[6].toString()),
         Long.valueOf(r[7].toString()),
         Long.valueOf(r[8].toString()));
+  }
+
+  /**
+   * Devuelve una lista de traslados con la data formateada para el portal
+   *
+   * @return
+   */
+  public List<PortalTrasladoDTO> getPortalTraslados() {
+    String sql =
+        "select t.id, t.tracking_number, DATE_FORMAT(t.created_at, '%Y/%m/%d %H:%i:%s') AS created_at, o.nombre as Origen, d.nombre as Destino, e.estado "
+            + "from traslados t, bodega o, bodega d, estados e "
+            + "where t.origen = o.id "
+            + "and t.destino = d.id "
+            + "and t.estado = e.id "
+            + "order by 1 desc";
+
+    @SuppressWarnings("unchecked")
+    List<Object[]> rows = em.createNativeQuery(sql).getResultList();
+    List<PortalTrasladoDTO> lista = new ArrayList<>(rows.size());
+    for (Object[] row : rows) {
+      lista.add(
+          new PortalTrasladoDTO(
+              Long.parseLong(row[0].toString()),
+              row[1].toString(),
+              row[2].toString(),
+              row[3].toString(),
+              row[4].toString(),
+              row[5].toString()
+          ));
+    }
+    return lista;
   }
 }
