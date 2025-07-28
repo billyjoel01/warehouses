@@ -320,46 +320,61 @@
             </div>
     </main>
 
-    <!-- Modal Agregar Producto -->
-    <div class="modal fade" id="addProductModal" tabindex="-1" aria-labelledby="addProductModalLabel"
-        aria-hidden="true">
+    <div class="modal fade" id="trasladoModal" tabindex="-1" aria-labelledby="trasladoModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="addProductModalLabel">Agregar Nuevo Producto</h5>
+                    <h5 class="modal-title" id="trasladoModalLabel">Traslado</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form role="form" id="addProductForm" th:action="@{/portal/productos/nuevo}" method="post">
-                        <input type="hidden" id="addProductId" name="id" value="0" />
-                        <input type="hidden" id="addProductCreatedAt" name="createdAt" value="" />
-                        <!-- Nombre -->
-                        <div id="addProductNameDiv" class="input-group input-group-outline my-3">
-                            <label class="form-label">Nombre</label>
-                            <input type="text" id="addProductName" name="nombre" class="form-control" required>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <button id="btnActualizarEstado" type="button" class="btn btn-primary">Actualizar estado del
+                                traslado</button>
                         </div>
-                        <!-- Marca -->
-                        <div id="addProductMarcaDiv" class="input-group input-group-outline my-3">
-                            <label class="form-label">Marca</label>
-                            <input type="text" id="addProductMarca" name="marca" class="form-control">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h6 class="text-dark text-sm font-weight-bold mb-0">Datos del traslado</h6>
+                            <div class="table-responsive p-0">
+                                <table id="tablaDetalles" class="table align-items-center mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th
+                                                class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                                                Nombre</th>
+                                            <th
+                                                class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+                                                Cantidad</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
                         </div>
-                        <!-- Descripcion -->
-                        <div id="addProductDescripcionDiv" class="input-group input-group-outline my-3">
-                            <label class="form-label">Descripción</label>
-                            <textarea id="addProductDescripcion" name="descripcion" class="form-control"
-                                rows="3"></textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h6 class="text-dark text-sm font-weight-bold mb-0">Historial del traslado</h6>
                         </div>
-                        <!-- Precio -->
-                        <div id="addProductPrecioDiv" class="input-group input-group-outline my-3">
-                            <label class="form-label">Precio</label>
-                            <input type="number" id="addProductPrecio" name="precio" class="form-control" step="0.01"
-                                required>
+                    </div>
+                    <div id="historialTraslado" class="timeline timeline-one-side">
+                        <div class="timeline-block mb-3">
+                            <span class="timeline-step">
+                                <i class="material-icons text-success text-gradient">check</i>
+                            </span>
+                            <div class="timeline-content pt-1">
+                                <h6 class="text-dark text-sm font-weight-bold mb-0">Información del producto</h6>
+                                <p class="text-secondary text-xs mt-1 mb-0">fecha</p>
+                                <p class="text-sm text-dark mt-3 mb-2">Estado</p>
+                            </div>
                         </div>
-                    </form>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                    <button type="submit" class="btn btn-primary" form="addProductForm">Guardar Producto</button>
                 </div>
             </div>
         </div>
@@ -411,28 +426,6 @@
             }
         });
 
-        document.getElementById('addProductForm').reset();
-        document.getElementById('addProductId').value = "0";
-        var win = navigator.platform.indexOf('Win') > -1;
-        if (win && document.querySelector('#sidenav-scrollbar')) {
-            var options = {
-                damping: '0.5'
-            }
-            Scrollbar.init(document.querySelector('#sidenav-scrollbar'), options);
-        }
-
-        const addProductModalEl = document.getElementById('addProductModal');
-        addProductModalEl.addEventListener('hidden.bs.modal', event => {
-            // Resetea el formulario cuando el modal se cierra
-            document.getElementById('addProductForm').reset();
-            document.getElementById('addProductModalLabel').innerHTML = 'Agregar Nuevo Producto';
-            document.getElementById('addProductId').value = 0;
-            document.getElementById('addProductNameDiv').classList.remove('is-filled');
-            document.getElementById('addProductMarcaDiv').classList.remove('is-filled');
-            document.getElementById('addProductDescripcionDiv').classList.remove('is-filled');
-            document.getElementById('addProductPrecioDiv').classList.remove('is-filled');
-        });
-
         function obtenerDetallesSeleccionados() {
             const detalles = [];
             const filas = document.querySelectorAll('#tablaProductosOrigen tbody tr');
@@ -464,6 +457,14 @@
             const origen = document.getElementById('bodegaOrigen').value;
             const destino = document.getElementById('bodegaDestino').value;
             const detalles = obtenerDetallesSeleccionados();
+            if (detalles.length === 0) {
+                swal("Advertencia", "Debe seleccionar al menos un producto con cantidad mayor a cero.", "warning");
+                return; // No continúa con el fetch
+            }
+            if(origen === destino){
+                swal("Advertencia", "La bodega de origen y destino no pueden ser la misma.", "warning");
+                return; // No continúa con el fetch
+            }
             const requestData = {
                 origen: origen,
                 destino: destino,
@@ -495,59 +496,123 @@
             });
         });
 
-        function editarProducto(e) {
-            document.getElementById('addProductModalLabel').innerHTML = 'Editar Producto';
-            document.getElementById('addProductForm').reset();
-            document.getElementById('addProductId').value = e.dataset.id;
-            document.getElementById('addProductCreatedAt').value = e.dataset.createdat;
-            document.getElementById('addProductName').value = e.dataset.nombre;
-            document.getElementById('addProductMarca').value = e.dataset.marca;
-            document.getElementById('addProductDescripcion').value = e.dataset.descripcion;
-            document.getElementById('addProductPrecio').value = e.dataset.precio;
+        function openTraslado(e) {
+            const trasladoId = e.dataset.id;
+            fetch('/warehouse/v1/traslados/' + trasladoId, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            }).then(response => {
+                if (response.ok) {
+                    return response.json(); // Devolvemos la promesa del JSON para encadenar
+                } else {
+                    // Si la respuesta no es ok, lanzamos un error para que lo capture el .catch()
+                    throw new Error('No se pudo obtener el traslado.');
+                }
+            }).then(data => {
+                let txt = '';
+                data.historial.forEach(h => {
+                    txt += '<div class="timeline-block mb-3">'
+                        + '<span class="timeline-step">';
+                    if (h.estado.id === 1) {
+                        txt += '<i class="material-icons text-danger text-gradient">add_shopping_cart</i>';
+                    } else if (h.estado.id === 2) {
+                        txt += '<i class="material-icons text-warning text-gradient">shopping_cart_checkout</i>';
+                    } else if (h.estado.id === 3) {
+                        txt += '<i class="material-icons text-success text-gradient">local_shipping</i>';
+                    } else if (h.estado.id === 4) {
+                        txt += '<i class="material-icons text-info text-gradient">done_all</i>';
+                    }
+                    txt += '</span>'
+                        + '<div class="timeline-content pt-1">'
+                        + '<h6 class="text-dark text-sm font-weight-bold mb-0">' + h.estado.estado + '</h6>'
+                        + '<p class="text-secondary text-xs mt-1 mb-0">' + h.createdAt + '</p>'
+                        + '<p class="text-sm text-dark mt-3 mb-2">Estado</p>'
+                        + '</div>'
+                        + '</div>';
+                });
 
-            document.getElementById('addProductNameDiv').classList.add('is-filled');
-            document.getElementById('addProductMarcaDiv').classList.add('is-filled');
-            document.getElementById('addProductDescripcionDiv').classList.add('is-filled');
-            document.getElementById('addProductPrecioDiv').classList.add('is-filled');
+                const btn = document.getElementById('btnActualizarEstado');
+                btn.setAttribute("data-traslado-id", data.id);
+                document.getElementById('historialTraslado').innerHTML = txt;
+                txt = '';
+                data.detalles.forEach(d => {
+                    txt += '<tr>'
+                        + '<td>' + d.producto.marca + ' - ' + d.producto.nombre + '</td>'
+                        + '<td>' + d.cantidad + '</td>'
+                        + '</tr>';
+                });
+                tablaDetalles.querySelector('tbody').innerHTML = txt;
+                switch (data.estado.id) {
+                    case 1:
+                        btn.innerHTML = '<i class="material-icons text-white">add_shopping_cart</i> ACTUALIZAR ESTADO DEL TRASLADO';
+                        btn.className = 'btn btn-info';
+                        btn.setAttribute("data-sig-estado", "2");
+                        break;
+                    case 2:
+                        btn.innerHTML = '<i class="material-icons text-white">shopping_cart_checkout</i> ACTUALIZAR ESTADO DEL TRASLADO';
+                        btn.className = 'btn btn-success';
+                        btn.setAttribute("data-sig-estado", "3");
+                        break;
+                    case 3:
+                        btn.innerHTML = '<i class="material-icons text-white">local_shipping</i> ACTUALIZAR ESTADO DEL TRASLADO';
+                        btn.className = 'btn btn-secondary';
+                        btn.setAttribute("data-sig-estado", "4");
+                        break;
+                    case 4:
+                        btn.innerHTML = '<i class="material-icons text-white">done_all</i> ACTUALIZAR ESTADO DEL TRASLADO';
+                        btn.className = 'btn btn-secondary';
+                        btn.setAttribute("data-sig-estado", "4");
+                        btn.disabled = true;
+                        break;
+                    default:
+                        btn.innerHTML = 'Actualizar estado del traslado';
+                        btn.className = 'btn btn-primary';
+                        btn.disabled = true;
+                        break;
 
-            const addProductModal = new bootstrap.Modal(document.getElementById('addProductModal'));
-            addProductModal.show();
+                }
+            }).catch(error => {
+                console.error('Error:', error);
+                swal("Error", "No se pudo crear el traslado. Por favor, intente de nuevo.", "error");
+            });
+
+            const trasladoModal = new bootstrap.Modal(document.getElementById('trasladoModal'));
+            trasladoModal.show();
         }
 
-        // function elimninarProducto(id) {
-        //     swal({
-        //         title: "Eliminar Producto",
-        //         text: "Estas seguro de que quieres eliminar este producto?",
-        //         icon: "warning",
-        //         buttons: true,
-        //         dangerMode: true,
-        //     })
-        //         .then((willDelete) => {
-        //             if (willDelete) {
-        //                 fetch('/warehouse/v1/productos/' + id, {
-        //                     method: 'DELETE',
-        //                     headers: {
-        //                         'Content-Type': 'application/json',
-        //                     }
-        //                 }).then(response => {
-        //                     if (response.ok) {
-        //                         // Usamos swal para mostrar la información del producto creado
-        //                         swal("¡Producto eliminado!", "El producto con ID: " + id + " fue elinminado", "success")
-        //                             .then(() => {
-        //                                 location.reload(); // Recargamos la página después de cerrar el swal
-        //                             });
-        //                     } else {
-        //                         // Si la respuesta no es ok, lanzamos un error para que lo capture el .catch()
-        //                         throw new Error('No se pudo eliminar el producto.');
-        //                     }
-        //                 }).catch(error => {
-        //                     console.error('Error:', error);
-        //                     swal("Error", "No se pudo eliminar el producto.", "error");
-        //                 });
-        //             }
-        //         });
-        // }
+        document.getElementById("btnActualizarEstado").addEventListener("click", function () {
+            const url = `/warehouse/v1/traslados`;
+            const trasladoId = parseInt(this.dataset.trasladoId);
+            console.log("id del traslado: " + trasladoId);
+            const payload = {
+                traslado: trasladoId,
+                estado: parseInt(this.dataset.sigEstado)
+            };
 
+            fetch(url, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            }).then(response => {
+                if (!response.ok) {
+                    throw new Error("Error al actualizar el traslado");
+                }
+                return response.json();
+            }).then(data => {
+                console.log("Traslado actualizado con éxito", data);
+                swal("¡Traslado actualizado!", `El traslado con ID: ${data.trackingNumber} tiene un nuevo estado ${data.estado.estado}.`, "success")
+                    .then(() => {
+                        location.reload(); // Recargamos la página después de cerrar el swal
+                    });
+            }).catch(error => {
+                console.error("Error en la petición:", error);
+                // Mostrar mensaje de error al usuario
+            });
+        });
 
     </script>
     <!-- Github buttons -->
